@@ -1,38 +1,31 @@
 import pickle
 
+from flask import Flask, request, jsonify
+
+app = Flask('ChurnService')
+
 model_file = "model_C=1.0.bin"
 
+@app.route('/churn', methods=["POST"])
+def exec():
+    with open(model_file, "rb") as f_in:
+        dv, model = pickle.load(f_in)
 
-with open(model_file, "rb") as f_in:
-    dv, model = pickle.load(f_in)
+    customer = request.get_json()
+    print(f"Input customer: {customer}\n")
 
+    X = dv.transform([customer])
+    y_pred = model.predict_proba(X)[:, 1]
 
-customer = {
-    "customerid": "la-la",
-    "gender": "male",
-    "seniorcitizen": 0,
-    "partner": "no",
-    "dependents": "no",
-    "tenure": 12,
-    "phoneservice": "yes",
-    "multiplelines": "yes",
-    "internetservice": "fiber_optic",
-    "onlinesecurity": "no",
-    "onlinebackup": "no",
-    "deviceprotection": "no",
-    "techsupport": "no",
-    "streamingtv": "no",
-    "streamingmovies": "yes",
-    "contract": "month-to-month",
-    "paperlessbilling": "no",
-    "paymentmethod": "electronic_check",
-    "monthlycharges": 63.05,
-    "totalcharges": 1299.3,
-}
+    churn = (y_pred >= 0.5)
+    print(f"Prediction of customer churning: {y_pred}")
 
-print(f"Input customer: {customer}\n")
+    response = {
+        "churn_prediction_val": float(y_pred),
+        "is_churning": bool(churn)
+    }
 
-X = dv.transform([customer])
-y_pred = model.predict_proba(X)[:, 1]
+    return jsonify(response)
 
-print(f"Prediction of customer churning: {y_pred}")
+if __name__ == '__main__':
+    app.run(debug=True, host="0.0.0.0", port=9696)
