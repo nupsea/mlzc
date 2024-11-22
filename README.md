@@ -10,5 +10,5 @@ conda create -n ml-zoomcamp python=3.11
 conda install numpy pandas scikit-learn seaborn jupyter
 ```
 
-
+.
 
